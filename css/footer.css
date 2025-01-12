@@ -1,0 +1,44 @@
+/* Footer整体样式 */
+footer {
+    margin-top: 10px;
+    padding: 5px 0;
+    /* 浅灰背景 */
+    color: #333;
+    /* 字体深灰色 */
+    text-align: center;
+    background-color: #fff;
+}
+
+/* 内部内容样式 */
+.footer-content {
+    max-width: 1200px;
+    margin: 0 auto;
+}
+
+.footer-content p {
+    margin: 2px 0;
+    font-size: 1rem;
+    line-height: 1.5;
+}
+
+/* 链接样式 */
+.footer-content a {
+    color: #007bff;
+    /* 蓝色链接 */
+    text-decoration: none;
+    font-weight: bold;
+    transition: color 0.3s ease;
+}
+
+.footer-content a:hover {
+    color: #0056b3;
+    /* 悬停更深蓝色 */
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .footer-content {
+        padding: 10px;
+        font-size: 0.9rem;
+    }
+}
