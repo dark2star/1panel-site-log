@@ -118,27 +118,50 @@ $topOs = queryDatabase($logsDbPath, "SELECT os AS name, COUNT(*) AS count FROM s
 ]);
 
 // 查询日志数据
+
+// 获取筛选条件
+$filterColumn = $_GET['filter_column'] ?? '';
+$filterValue = $_GET['filter_value'] ?? '';
+
 $page = max(1, intval($_GET['page'] ?? 1));
 $pageSize = 20;
 $offset = ($page - 1) * $pageSize;
-$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, spider, request_time, os, browser, device FROM site_req_logs WHERE day BETWEEN :start AND :end ORDER BY localtime DESC LIMIT :limit OFFSET :offset";
-$logData = queryDatabase($logsDbPath, $logQuery, [
+
+$filterCondition = '';
+$params = [
     ':start' => $startDate,
     ':end' => $endDate,
-    ':limit' => $pageSize,
-    ':offset' => $offset,
-]);
+];
+
+if ($filterColumn && $filterValue) {
+    $filterCondition = "AND $filterColumn = :filterValue";
+    $params[':filterValue'] = $filterValue;
+}
+
+$logParams = $params;
+$logParams[':limit'] = $pageSize;
+$logParams[':offset'] = $offset;
+
+$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, spider, request_time, os, browser, device 
+             FROM site_req_logs 
+             WHERE day BETWEEN :start AND :end $filterCondition 
+             ORDER BY localtime DESC 
+             LIMIT :limit OFFSET :offset";
+$logData = queryDatabase($logsDbPath, $logQuery, $logParams);
+
 
 // 获取日志总数
-$totalLogs = queryDatabase($logsDbPath, "SELECT COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end", [
-    ':start' => $startDate,
-    ':end' => $endDate,
-])[0]['count'];
+$totalLogs = queryDatabase($logsDbPath, "SELECT COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end $filterCondition", $params)[0]['count'];
 $totalPages = ceil($totalLogs / $pageSize);
 
 // 确定页码范围
 $startPage = max(1, $page - 3);
 $endPage = min($totalPages, $page + 3);
+
+$paginationUrl = "?site=$selectedSite&date_range=$dateRange&start_date=$startDate&end_date=$endDate";
+if ($filterColumn && $filterValue) {
+    $paginationUrl .= "&filter_column=$filterColumn&filter_value=" . urlencode($filterValue);
+}
 ?>
 
 <!DOCTYPE html>
@@ -166,6 +189,11 @@ $endPage = min($totalPages, $page + 3);
         text-align: center;
         color: #333;
         margin-bottom: 20px;
+    }
+    
+    a{
+        text-decoration:none;
+        font-weight: bold;
     }
 
     .chart-container {
@@ -313,7 +341,7 @@ $endPage = min($totalPages, $page + 3);
                     value="<?= htmlspecialchars($endDate) ?>">
             </div>
             <div class="col-md-12 text-end">
-                <button type="submit" class="btn btn-primary">查询</button>
+                <button type="submit" class="btn btn-primary" onclick="clearFilters()">查询</button>
             </div>
         </form>
 
@@ -373,7 +401,9 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group top15-list">
                     <?php foreach ($topIPs as $ip): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <?= htmlspecialchars($ip['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=ip&filter_value=<?= urlencode($ip['name']) ?>">
+                            <?= htmlspecialchars($ip['name']) ?>
+                        </a>
                         <span class="badge bg-primary rounded-pill"><?= $ip['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
@@ -399,7 +429,9 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group top15-list">
                     <?php foreach ($topCountries as $country): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <?= htmlspecialchars($country['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=ip_country_zh&filter_value=<?= urlencode($country['name']) ?>">
+                            <?= htmlspecialchars($country['name']) ?>
+                        </a>
                         <span class="badge bg-primary rounded-pill"><?= $country['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
@@ -412,7 +444,9 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group top15-list">
                     <?php foreach ($topDevices as $device): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <?= htmlspecialchars($device['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=device&filter_value=<?= urlencode($device['name']) ?>">
+                            <?= htmlspecialchars($device['name']) ?>
+                        </a>
                         <span class="badge bg-primary rounded-pill"><?= $device['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
@@ -425,7 +459,9 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group top15-list">
                     <?php foreach ($topHost as $host): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <?= htmlspecialchars($host['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=host&filter_value=<?= urlencode($host['name']) ?>">
+                            <?= htmlspecialchars($host['name']) ?>
+                        </a>
                         <span class="badge bg-primary rounded-pill"><?= $host['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
@@ -438,7 +474,9 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group top15-list">
                     <?php foreach ($topOs as $os): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <?= htmlspecialchars($os['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=os&filter_value=<?= urlencode($os['name']) ?>">
+                            <?= htmlspecialchars($os['name']) ?>
+                        </a>
                         <span class="badge bg-primary rounded-pill"><?= $os['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
@@ -495,16 +533,13 @@ $endPage = min($totalPages, $page + 3);
         <!-- 分页 -->
         <div class="pagination">
             <?php if ($startPage > 1): ?>
-            <a
-                href="?site=<?= urlencode($selectedSite) ?>&date_range=<?= urlencode($dateRange) ?>&page=1&start_date=<?= htmlspecialchars($startDate) ?>&end_date=<?= htmlspecialchars($endDate) ?>">首页</a>
+                <a href="<?= $paginationUrl ?>&page=1">首页</a>
             <?php endif; ?>
             <?php for ($i = $startPage; $i <= $endPage; $i++): ?>
-            <a href="?site=<?= urlencode($selectedSite) ?>&date_range=<?= urlencode($dateRange) ?>&page=<?= $i ?>&start_date=<?= htmlspecialchars($startDate) ?>&end_date=<?= htmlspecialchars($endDate) ?>"
-                class="<?= $i == $page ? 'active' : '' ?>"><?= $i ?></a>
+                <a href="<?= $paginationUrl ?>&page=<?= $i ?>" <?= $i === $page ? 'class="active"' : '' ?>><?= $i ?></a>
             <?php endfor; ?>
             <?php if ($endPage < $totalPages): ?>
-            <a
-                href="?site=<?= urlencode($selectedSite) ?>&date_range=<?= urlencode($dateRange) ?>&page=<?= $totalPages ?>&start_date=<?= htmlspecialchars($startDate) ?>&end_date=<?= htmlspecialchars($endDate) ?>">尾页</a>
+            <a href="<?= $paginationUrl ?>&page=<?= $totalPages ?>">尾页</a>
             <?php endif; ?>
         </div>
     </div>
@@ -519,6 +554,13 @@ $endPage = min($totalPages, $page + 3);
     </footer>
 
     <script>
+    function clearFilters() {
+        const url = new URL(window.location.href);
+        url.searchParams.delete('filter_column');
+        url.searchParams.delete('filter_value');
+        window.location.href = url.toString();
+    }
+    
     // 生成统计图
     const ctx = document.getElementById('statChart').getContext('2d');
     const chartData = {
