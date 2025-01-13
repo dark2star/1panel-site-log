@@ -323,6 +323,11 @@ $endPage = min($totalPages, $page + 3);
                 <ul class="list-group d-flex flex-row flex-wrap p-0 justify-content-center">
                     <li class="list-group-item d-flex flex-column align-items-center m-2"
                         style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
+                        <strong>请求数</strong>
+                        <span class="badge bg-secondary"><?= $aggregatedData['req'] ?></span>
+                    </li>    
+                    <li class="list-group-item d-flex flex-column align-items-center m-2"
+                        style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
                         <strong>页面访问量 (PV)</strong>
                         <span class="badge bg-secondary"><?= $aggregatedData['pv'] ?></span>
                     </li>                    
@@ -335,11 +340,6 @@ $endPage = min($totalPages, $page + 3);
                         style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
                         <strong>独立 IP 数量</strong>
                         <span class="badge bg-secondary"><?= $aggregatedData['ip'] ?></span>
-                    </li>
-                    <li class="list-group-item d-flex flex-column align-items-center m-2"
-                        style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
-                        <strong>请求数</strong>
-                        <span class="badge bg-secondary"><?= $aggregatedData['req'] ?></span>
                     </li>
                     <li class="list-group-item d-flex flex-column align-items-center m-2"
                         style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
