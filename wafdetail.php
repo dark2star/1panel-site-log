@@ -14,8 +14,8 @@ $selectedWebsite = isset($_GET['website_key']) ? $_GET['website_key'] : '';
 $selectedHost = isset($_GET['host']) ? $_GET['host'] : '';
 
 // 如果未提供开始日期，则默认查询所有数据
-$startDateCondition = $startDate ? "DATE(localtime) >= '$startDate'" : '1=1';
-$endDateCondition = "DATE(localtime) <= '$endDate'";
+$startDateCondition = $startDate ? "DATE(datetime(localtime, '+8 hours')) >= '$startDate'" : '1=1';
+$endDateCondition = "DATE(datetime(localtime, '+8 hours')) <= '$endDate'";
 
 // 站点和站点域名条件
 $websiteCondition = $selectedWebsite && $selectedWebsite !== 'all' ? "AND website_key = '$selectedWebsite'" : '';
