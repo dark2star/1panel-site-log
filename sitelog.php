@@ -153,7 +153,7 @@ $logParams = $params;
 $logParams[':limit'] = $pageSize;
 $logParams[':offset'] = $offset;
 
-$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, spider, request_time, os, browser, device 
+$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, spider, flow,request_time, os, browser, device 
              FROM site_req_logs 
              WHERE day BETWEEN :start AND :end $filterCondition 
              ORDER BY localtime DESC 
@@ -545,6 +545,7 @@ if ($filterColumn && $filterValue) {
                     <th>请求 URL</th>
                     <th>状态码</th>
                     <th>请求时间</th>
+                    <th>流量(Byte)</th>
                     <th>操作系统</th>
                     <th>浏览器</th>
                     <th>设备</th>
@@ -565,6 +566,7 @@ if ($filterColumn && $filterValue) {
                     <td><?= htmlspecialchars($log['request_uri']) ?></td>
                     <td><?= htmlspecialchars($log['status_code']) ?></td>
                     <td><?= htmlspecialchars($log['request_time']) ?></td>
+                    <td><?= htmlspecialchars($log['flow']) ?></td>
                     <td><?= htmlspecialchars($log['os']) ?></td>
                     <td><?= htmlspecialchars($log['browser']) ?></td>
                     <td><?= htmlspecialchars($log['device']) ?></td>
