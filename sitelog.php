@@ -57,8 +57,8 @@ $logsDbPath = BASE_DIR . "/$selectedSite/site_req_logs.db";
 
 // 查询统计数据
 $statQuery = ($startDate === $endDate)
-    ? "SELECT hour AS time, pv, spider, ip, uv, req, count4xx, count5xx FROM site_stat WHERE day = :day"
-    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
+    ? "SELECT hour AS time, pv, spider, ip, uv, req, (flow/1024/1024) AS flow, count4xx, count5xx FROM site_stat WHERE day = :day"
+    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, (SUM(flow)/1024/1024) AS flow AS flow, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
 $statData = queryDatabase($statDbPath, $statQuery, [
     ':day' => $startDate,
     ':start' => $startDate,
@@ -72,14 +72,15 @@ $aggregatedData = [
     'ip' => array_sum(array_column($statData, 'ip')),
     'uv' => array_sum(array_column($statData, 'uv')),
     'req' => array_sum(array_column($statData, 'req')),
+    'flow' => array_sum(array_column($statData, 'flow')),
     'count4xx' => array_sum(array_column($statData, 'count4xx')),
     'count5xx' => array_sum(array_column($statData, 'count5xx')),
 ];
 
 // 查询统计数据
 $statQuery = ($startDate === $endDate)
-    ? "SELECT hour AS time, pv, spider, ip, uv, req, count4xx, count5xx FROM site_stat WHERE day = :day"
-    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
+    ? "SELECT hour AS time, pv, spider, ip, uv, req, (flow/1024/1024) AS flow, count4xx, count5xx FROM site_stat WHERE day = :day"
+    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, (SUM(flow)/1024/1024) AS flow, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
 $statData = queryDatabase($statDbPath, $statQuery, [
     ':day' => $startDate,
     ':start' => $startDate,
@@ -92,12 +93,17 @@ $topCountries = queryDatabase($logsDbPath, "SELECT ip_country_zh AS name, COUNT(
     ':end' => $endDate,
 ]);
 
+$topProvinces = queryDatabase($logsDbPath, "SELECT ip_province_zh AS name, COUNT(*) AS count FROM site_req_logs WHERE ip_province_zh !='' AND day BETWEEN :start AND :end GROUP BY ip_province_zh ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
 $topIPs = queryDatabase($logsDbPath, "SELECT ip AS name, COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end GROUP BY ip ORDER BY count DESC LIMIT 15", [
     ':start' => $startDate,
     ':end' => $endDate,
 ]);
 
-$topDevices = queryDatabase($logsDbPath, "SELECT device AS name, COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end GROUP BY device ORDER BY count DESC LIMIT 15", [
+$topDevices = queryDatabase($logsDbPath, "SELECT device AS name, COUNT(*) AS count FROM site_req_logs WHERE device !='' AND day BETWEEN :start AND :end GROUP BY device ORDER BY count DESC LIMIT 15", [
     ':start' => $startDate,
     ':end' => $endDate,
 ]);
@@ -107,12 +113,17 @@ $topURIs = queryDatabase($logsDbPath, "SELECT uri AS name, COUNT(*) AS count FRO
     ':end' => $endDate,
 ]);
 
+$topSpiders = queryDatabase($logsDbPath, "SELECT spider AS name, COUNT(*) AS count FROM site_req_logs WHERE spider !='' AND day BETWEEN :start AND :end GROUP BY spider ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
 $topHost = queryDatabase($logsDbPath, "SELECT host AS name, COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end GROUP BY host ORDER BY count DESC LIMIT 15", [
     ':start' => $startDate,
     ':end' => $endDate,
 ]);
 
-$topOs = queryDatabase($logsDbPath, "SELECT os AS name, COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end GROUP BY os ORDER BY count DESC LIMIT 15", [
+$topOs = queryDatabase($logsDbPath, "SELECT os AS name, COUNT(*) AS count FROM site_req_logs WHERE os !='' AND day BETWEEN :start AND :end GROUP BY os ORDER BY count DESC LIMIT 15", [
     ':start' => $startDate,
     ':end' => $endDate,
 ]);
@@ -378,7 +389,12 @@ if ($filterColumn && $filterValue) {
                         style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
                         <strong>响应5xx</strong>
                         <span class="badge bg-secondary"><?= $aggregatedData['count5xx'] ?></span>
-                    </li>                    
+                    </li> 
+                    <li class="list-group-item d-flex flex-column align-items-center m-2"
+                        style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
+                        <strong>流量</strong>
+                        <span class="badge bg-secondary"><?= $aggregatedData['flow'] ?>MB</span>
+                    </li>
                     <li class="list-group-item d-flex flex-column align-items-center m-2"
                         style="flex: 1 1 calc(25% - 10px); min-width: 120px;">
                         <strong>蜘蛛访问量</strong>
@@ -438,6 +454,21 @@ if ($filterColumn && $filterValue) {
                 </ul>
             </div>
             
+            <!-- 省份来源 TOP 15 -->
+            <div class="top15-container">
+                <h3>省份来源 TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topProvinces as $provinces): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=ip_province_zh&filter_value=<?= urlencode($provinces['name']) ?>">
+                            <?= htmlspecialchars($provinces['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $provinces['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
             <!-- 域名来源 TOP 15 -->
             <div class="top15-container">
                 <h3>域名来源 TOP 15</h3>
@@ -448,6 +479,21 @@ if ($filterColumn && $filterValue) {
                             <?= htmlspecialchars($host['name']) ?>
                         </a>
                         <span class="badge bg-primary rounded-pill"><?= $host['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- 蜘蛛蜘蛛 TOP 15 -->
+            <div class="top15-container">
+                <h3>蜘蛛抓取 TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topSpiders as $spiders): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=spider&filter_value=<?= urlencode($spiders['name']) ?>">
+                            <?= htmlspecialchars($spiders['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $spiders['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -594,6 +640,12 @@ if ($filterColumn && $filterValue) {
                 label: '请求数',
                 data: <?= json_encode(array_column($statData, 'req')) ?> ,
                 borderColor: 'rgba(130, 99, 132, 1)',
+                fill: false,
+        },
+        {
+                label: '流量(MB)',
+                data: <?= json_encode(array_column($statData, 'flow')) ?> ,
+                borderColor: 'rgba(35, 99, 132, 1)',
                 fill: false,
         },
         {
