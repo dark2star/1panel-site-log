@@ -437,22 +437,7 @@ if ($filterColumn && $filterValue) {
                     <?php endforeach; ?>
                 </ul>
             </div>
-
-            <!-- 设备来源 TOP 15 -->
-            <div class="top15-container">
-                <h3>设备来源 TOP 15</h3>
-                <ul class="list-group top15-list">
-                    <?php foreach ($topDevices as $device): ?>
-                    <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=device&filter_value=<?= urlencode($device['name']) ?>">
-                            <?= htmlspecialchars($device['name']) ?>
-                        </a>
-                        <span class="badge bg-primary rounded-pill"><?= $device['count'] ?></span>
-                    </li>
-                    <?php endforeach; ?>
-                </ul>
-            </div>
-
+            
             <!-- 域名来源 TOP 15 -->
             <div class="top15-container">
                 <h3>域名来源 TOP 15</h3>
@@ -463,6 +448,21 @@ if ($filterColumn && $filterValue) {
                             <?= htmlspecialchars($host['name']) ?>
                         </a>
                         <span class="badge bg-primary rounded-pill"><?= $host['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- 设备来源 TOP 15 -->
+            <div class="top15-container">
+                <h3>设备来源 TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topDevices as $device): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=device&filter_value=<?= urlencode($device['name']) ?>">
+                            <?= htmlspecialchars($device['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $device['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
