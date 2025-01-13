@@ -58,7 +58,7 @@ $logsDbPath = BASE_DIR . "/$selectedSite/site_req_logs.db";
 // 查询统计数据
 $statQuery = ($startDate === $endDate)
     ? "SELECT hour AS time, pv, spider, ip, uv, req, (flow/1024/1024) AS flow, count4xx, count5xx FROM site_stat WHERE day = :day"
-    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, (SUM(flow)/1024/1024) AS flow AS flow, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
+    : "SELECT day AS time, SUM(pv) AS pv, SUM(spider) AS spider, SUM(ip) AS ip, SUM(uv) AS uv, SUM(req) AS req, (SUM(flow)/1024/1024) AS flow, SUM(count4xx) AS count4xx, SUM(count5xx) AS count5xx FROM site_stat WHERE day BETWEEN :start AND :end GROUP BY day";
 $statData = queryDatabase($statDbPath, $statQuery, [
     ':day' => $startDate,
     ':start' => $startDate,
@@ -128,6 +128,16 @@ $topOs = queryDatabase($logsDbPath, "SELECT os AS name, COUNT(*) AS count FROM s
     ':end' => $endDate,
 ]);
 
+$topStatusCode = queryDatabase($logsDbPath, "SELECT status_code AS name, COUNT(*) AS count FROM site_req_logs WHERE day BETWEEN :start AND :end GROUP BY status_code ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
+$topUvIds = queryDatabase($logsDbPath, "SELECT uv_id AS name, COUNT(*) AS count FROM site_req_logs WHERE uv_id !='' AND day BETWEEN :start AND :end GROUP BY uv_id ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
 // 查询日志数据
 
 // 获取筛选条件
@@ -153,7 +163,7 @@ $logParams = $params;
 $logParams[':limit'] = $pageSize;
 $logParams[':offset'] = $offset;
 
-$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, spider, flow,request_time, os, browser, device 
+$logQuery = "SELECT datetime(localtime, '+8 hours') AS localtime, ip, ip_country_zh, ip_province_zh, user_agent, method, host, request_uri, status_code, referer, uv_id, spider, flow,request_time, os, browser, device 
              FROM site_req_logs 
              WHERE day BETWEEN :start AND :end $filterCondition 
              ORDER BY localtime DESC 
@@ -484,9 +494,39 @@ if ($filterColumn && $filterValue) {
                 </ul>
             </div>
             
-            <!-- 蜘蛛蜘蛛 TOP 15 -->
+            <!-- 状态码分布 TOP 15 -->
             <div class="top15-container">
-                <h3>蜘蛛抓取 TOP 15</h3>
+                <h3>状态码分布 TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topStatusCode as $statusCode): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=status_code&filter_value=<?= urlencode($statusCode['name']) ?>">
+                            <?= htmlspecialchars($statusCode['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $statusCode['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- UV ID TOP 15 -->
+            <div class="top15-container">
+                <h3>UV ID TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topUvIds as $uvIds): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=uv_id&filter_value=<?= urlencode($uvIds['name']) ?>">
+                            <?= htmlspecialchars($uvIds['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $uvIds['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- 蜘蛛爬虫 TOP 15 -->
+            <div class="top15-container">
+                <h3>蜘蛛爬虫 TOP 15</h3>
                 <ul class="list-group top15-list">
                     <?php foreach ($topSpiders as $spiders): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
@@ -549,6 +589,7 @@ if ($filterColumn && $filterValue) {
                     <th>操作系统</th>
                     <th>浏览器</th>
                     <th>设备</th>
+                    <th>uv id</th>
                     <th>蜘蛛</th>
                     <th>Referer</th>
                     <th>浏览器agent</th>
@@ -570,6 +611,7 @@ if ($filterColumn && $filterValue) {
                     <td><?= htmlspecialchars($log['os']) ?></td>
                     <td><?= htmlspecialchars($log['browser']) ?></td>
                     <td><?= htmlspecialchars($log['device']) ?></td>
+                    <td><?= htmlspecialchars($log['uv_id']) ?></td>
                     <td><?= htmlspecialchars($log['spider']) ?></td>
                     <td><?= htmlspecialchars($log['referer']) ?></td>
                     <td><?= htmlspecialchars($log['user_agent']) ?></td>
