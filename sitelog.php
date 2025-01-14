@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Shanghai'); // 设置为中国时区
 // 定义站点目录路径
 define('BASE_DIR', '../plugins/adminer/adminer/wafdb/sites');
 
@@ -10,17 +11,39 @@ function getSites() {
 
 // 查询 SQLite 数据库
 function queryDatabase($dbPath, $query, $params = []) {
+    // 打开数据库
     $db = new SQLite3($dbPath);
+    // 设置忙等待时间为 5000 毫秒（5 秒）
+    $db->busyTimeout(5000);
+
+    // 准备 SQL 语句
     $stmt = $db->prepare($query);
+    if (!$stmt) {
+        throw new Exception("Failed to prepare statement: " . $db->lastErrorMsg());
+    }
+
+    // 绑定参数
     foreach ($params as $key => $value) {
         $stmt->bindValue($key, $value);
     }
+
+    // 执行查询
     $result = $stmt->execute();
+    if (!$result) {
+        throw new Exception("Failed to execute statement: " . $db->lastErrorMsg());
+    }
+
+    // 获取数据
     $data = [];
     while ($row = $result->fetchArray(SQLITE3_ASSOC)) {
         $data[] = $row;
     }
+
+    // 释放资源
+    $result->finalize();
+    $stmt->close();
     $db->close();
+
     return $data;
 }
 

@@ -1,4 +1,5 @@
 <?php
+date_default_timezone_set('Asia/Shanghai'); // 设置为中国时区
 // 配置 SQLite 数据库文件
 $db = new SQLite3('../plugins/adminer/adminer/wafdb/1pwaf.db');
 
