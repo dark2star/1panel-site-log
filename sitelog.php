@@ -161,6 +161,16 @@ $topUvIds = queryDatabase($logsDbPath, "SELECT uv_id AS name, COUNT(*) AS count 
     ':end' => $endDate,
 ]);
 
+$topBrowsers = queryDatabase($logsDbPath, "SELECT browser AS name, COUNT(*) AS count FROM site_req_logs WHERE browser !='' AND day BETWEEN :start AND :end GROUP BY browser ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
+$topReferers = queryDatabase($logsDbPath, "SELECT referer AS name, COUNT(*) AS count FROM site_req_logs WHERE referer !='' AND day BETWEEN :start AND :end GROUP BY referer ORDER BY count DESC LIMIT 15", [
+    ':start' => $startDate,
+    ':end' => $endDate,
+]);
+
 // 查询日志数据
 
 // 获取筛选条件
@@ -517,16 +527,16 @@ if ($filterColumn && $filterValue) {
                 </ul>
             </div>
             
-            <!-- 状态码分布 TOP 15 -->
+            <!-- 蜘蛛爬虫 TOP 15 -->
             <div class="top15-container">
-                <h3>状态码分布 TOP 15</h3>
+                <h3>蜘蛛爬虫 TOP 15</h3>
                 <ul class="list-group top15-list">
-                    <?php foreach ($topStatusCode as $statusCode): ?>
+                    <?php foreach ($topSpiders as $spiders): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=status_code&filter_value=<?= urlencode($statusCode['name']) ?>">
-                            <?= htmlspecialchars($statusCode['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=spider&filter_value=<?= urlencode($spiders['name']) ?>">
+                            <?= htmlspecialchars($spiders['name']) ?>
                         </a>
-                        <span class="badge bg-primary rounded-pill"><?= $statusCode['count'] ?></span>
+                        <span class="badge bg-primary rounded-pill"><?= $spiders['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -547,16 +557,16 @@ if ($filterColumn && $filterValue) {
                 </ul>
             </div>
             
-            <!-- 蜘蛛爬虫 TOP 15 -->
+            <!-- 状态码分布 TOP 15 -->
             <div class="top15-container">
-                <h3>蜘蛛爬虫 TOP 15</h3>
+                <h3>状态码分布 TOP 15</h3>
                 <ul class="list-group top15-list">
-                    <?php foreach ($topSpiders as $spiders): ?>
+                    <?php foreach ($topStatusCode as $statusCode): ?>
                     <li class="list-group-item d-flex justify-content-between align-items-center">
-                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=spider&filter_value=<?= urlencode($spiders['name']) ?>">
-                            <?= htmlspecialchars($spiders['name']) ?>
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=status_code&filter_value=<?= urlencode($statusCode['name']) ?>">
+                            <?= htmlspecialchars($statusCode['name']) ?>
                         </a>
-                        <span class="badge bg-primary rounded-pill"><?= $spiders['count'] ?></span>
+                        <span class="badge bg-primary rounded-pill"><?= $statusCode['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
@@ -587,6 +597,36 @@ if ($filterColumn && $filterValue) {
                             <?= htmlspecialchars($os['name']) ?>
                         </a>
                         <span class="badge bg-primary rounded-pill"><?= $os['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- 浏览器来源 TOP 15 -->
+            <div class="top15-container">
+                <h3>浏览器来源 TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topBrowsers as $browsers): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=browser&filter_value=<?= urlencode($browsers['name']) ?>">
+                            <?= htmlspecialchars($browsers['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $browsers['count'] ?></span>
+                    </li>
+                    <?php endforeach; ?>
+                </ul>
+            </div>
+            
+            <!-- Referer TOP 15 -->
+            <div class="top15-container">
+                <h3>Referer TOP 15</h3>
+                <ul class="list-group top15-list">
+                    <?php foreach ($topReferers as $referers): ?>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <a href="sitelog.php?site=<?= $selectedSite ?>&date_range=<?= $dateRange ?>&start_date=<?= $startDate ?>&end_date=<?= $endDate ?>&filter_column=referer&filter_value=<?= urlencode($referers['name']) ?>">
+                            <?= htmlspecialchars($referers['name']) ?>
+                        </a>
+                        <span class="badge bg-primary rounded-pill"><?= $referers['count'] ?></span>
                     </li>
                     <?php endforeach; ?>
                 </ul>
